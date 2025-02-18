@@ -1,0 +1,18 @@
+ CI/CD Pipeline
+Если вы используете CI/CD (например, GitHub Actions, GitLab CI или Jenkins), добавьте шаг для выполнения команды:
+.yaml 
+
+steps:
+  - name: Run Terraform
+    run: |
+      cd /path/to/terraform
+      terraform apply -auto-approve
+      terraform output -json > terraform_output.json
+
+  - name: Run Ansible
+    run: ansible-playbook -i ../ansible/inventory.ini ../ansible/main_playbook.yml
+
+
+    terraform apply -auto-approve
+    ansible-playbook -i ../ansible/inventory.ini ../ansible/main_playbook.yml
+    terraform destroy  -auto-approve

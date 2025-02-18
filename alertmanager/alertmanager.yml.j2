@@ -1,0 +1,31 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+  receiver: 'email-notifications'
+  routes:
+    - match:
+        alertname: 'VMStarted'
+      repeat_interval: 1s  # Отправить только один раз
+      receiver: 'email-notifications'
+
+receivers:
+  - name: 'email-notifications'
+    email_configs:
+      - to: 'Kovalermag@gmail.com'
+        from: 'alextestbase@gmail.com'
+        smarthost: 'smtp.gmail.com:587'
+        auth_username: 'alextestbase@gmail.com'
+        auth_password: 'Password'
+        send_resolved: true
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']

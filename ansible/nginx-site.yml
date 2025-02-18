@@ -1,0 +1,306 @@
+---
+- name:  Configure Nginx and Prometheus
+  hosts: web
+  become: yes
+  vars:
+    site_name: "testwebsite"
+    site_root: "/var/www/html/{{ site_name }}"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
+  tasks:
+  
+    - name: Example task
+      debug:
+        msg: "Connecting to the host"
+
+    # Шаг 1: Установка пакетов
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install required packages
+      apt:
+        name: 
+          - nginx
+          - python3-pip
+        state: present
+
+    # установка библиотеки
+    - name: Install prometheus_client Python package
+      pip:
+        name: prometheus_client
+        executable: pip3
+
+    # Шаг 2: Создание директории для сайта
+    - name: Create site directory
+      file:
+        path: "{{ site_root }}"
+        state: directory
+        owner: debian
+        group: debian
+        mode: '0755'
+
+    # Шаг 3: Развертывание файлов сайта
+    - name: Copy website files to server
+      copy:
+        src: "../site_files/"
+        dest: "{{ site_root }}"
+        owner: debian
+        group: debian
+        mode: '0644'
+
+    # Шаг 4: Настройка Nginx для сайта
+    - name: Template Nginx configuration for the site
+      template:
+        src: "nginx.conf.j2"
+        dest: "/etc/nginx/sites-available/{{ site_name }}"
+        owner: root
+        group: root
+        mode: '0644'
+      notify:
+        - Restart Nginx
+
+    - name: Enable the site configuration
+      file:
+        src: "/etc/nginx/sites-available/{{ site_name }}"
+        dest: "/etc/nginx/sites-enabled/{{ site_name }}"
+        state: link
+
+    - name: Remove default Nginx config
+      file:
+        path: "/etc/nginx/sites-enabled/default"
+        state: absent
+
+    # Шаг 5: Перезапуск Nginx
+    - name: Ensure Nginx is running
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    # Шаг 6: Добавление Python-скрипта для метрик
+    - name: Copy metrics server script
+      copy:
+        src: "metrics_server.py"
+        dest: "/opt/metrics_server.py"
+        owner: root
+        group: root
+        mode: '0755'
+
+      # Создание systemd service file для метрик
+    - name: Create systemd service file for metrics server
+      template:
+        src: "metrics_server.service.j2"  # Шаблон для systemd service
+        dest: "/etc/systemd/system/metrics_server.service"
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart metrics server
+
+    - name: Reload systemd manager configuration
+      systemd:
+        daemon_reload: yes
+
+    - name: Ensure metrics server is running
+      service:
+        name: metrics_server
+        state: started
+        enabled: yes
+
+    # Шаг 7: Установка и Настройка Prometheus
+    - name: Download Prometheus binary
+      get_url:
+        url: https://github.com/prometheus/prometheus/releases/download/v2.47.1/prometheus-2.47.1.linux-amd64.tar.gz
+        dest: /tmp/prometheus.tar.gz
+
+    - name: Extract Prometheus binary
+      unarchive:
+        src: /tmp/prometheus.tar.gz
+        dest: /usr/local/bin/
+        remote_src: yes
+        extra_opts: [--strip-components=1]
+
+    - name: Ensure Prometheus binary is executable
+      file:
+        path: /usr/local/bin/prometheus
+        mode: '0755'
+
+        # Создание пользователя и окружения
+    - name: Create prometheus user
+      user:
+        name: prometheus
+        state: present
+        system: yes
+
+    - name: Create /etc/prometheus directory
+      file:
+        path: /etc/prometheus
+        state: directory
+        owner: prometheus
+        group: prometheus
+        mode: '0755'
+
+    - name: Template prometheus.yml to server
+      template:
+        src: "../prometheus/prometheus.yml.j2"
+        dest: "/etc/prometheus/prometheus.yml"
+        owner: prometheus
+        group: prometheus
+        mode: '0644'
+      notify: Restart Prometheus
+
+    - name: Create Prometheus data directory
+      file:
+        path: /var/lib/prometheus/data
+        state: directory
+        owner: prometheus
+        group: prometheus
+        mode: '0755'
+
+    - name: Create Prometheus systemd service file
+      copy:
+        dest: /etc/systemd/system/prometheus.service
+        content: |
+          [Unit]
+          Description=Prometheus Monitoring
+          After=network.target
+
+          [Service]
+          User=prometheus
+          Group=prometheus
+          ExecStart=/usr/local/bin/prometheus \
+            --config.file=/etc/prometheus/prometheus.yml \
+            --storage.tsdb.path=/var/lib/prometheus/data
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Reload systemd and restart Prometheus
+
+    - name: Reload systemd configuration
+      systemd:
+        daemon_reload: yes
+
+    - name: Ensure Prometheus is running
+      service:
+        name: prometheus
+        state: started
+        enabled: yes
+
+         # Шаг: Установка Alertmanager
+    - name: Download Alertmanager binary
+      get_url:
+        url: https://github.com/prometheus/alertmanager/releases/download/v0.25.0/alertmanager-0.25.0.linux-amd64.tar.gz
+        dest: /tmp/alertmanager.tar.gz
+
+    - name: Extract Alertmanager binary
+      unarchive:
+        src: /tmp/alertmanager.tar.gz
+        dest: /usr/local/bin/
+        remote_src: yes
+        extra_opts: [--strip-components=1]
+
+    - name: Ensure Alertmanager binary is executable
+      file:
+        path: /usr/local/bin/alertmanager
+        mode: '0755'
+
+    - name: Create Alertmanager directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: prometheus
+        group: prometheus
+        mode: '0755'
+      loop:
+        - /etc/alertmanager
+        - /var/lib/alertmanager/data
+
+    # Шаг: Настройка конфигурации Alertmanager
+    - name: Template Alertmanager configuration
+      template:
+        src: "../alertmanager/alertmanager.yml.j2"
+        dest: "/etc/alertmanager/alertmanager.yml"
+        owner: prometheus
+        group: prometheus
+        mode: '0644'
+      notify: Restart Alertmanager
+
+    # Шаг: Создание systemd service file для Alertmanager
+    - name: Create Alertmanager systemd service file
+      copy:
+        dest: /etc/systemd/system/alertmanager.service
+        content: |
+          [Unit]
+          Description=Alertmanager
+          After=network.target
+          [Service]
+          User=prometheus
+          Group=prometheus
+          ExecStart=/usr/local/bin/alertmanager \
+            --config.file=/etc/alertmanager/alertmanager.yml \
+            --storage.path=/var/lib/alertmanager/data
+          Restart=always
+          [Install]
+          WantedBy=multi-user.target
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Reload systemd and restart Alertmanager
+
+    - name: Reload systemd configuration
+      systemd:
+        daemon_reload: yes
+
+    - name: Ensure Alertmanager is running
+      service:
+        name: alertmanager
+        state: started
+        enabled: yes
+
+    # Копирование шаблона правил
+    - name:  Template alert rules file
+      template:
+        src: "../prometheus/rules.yml.j2"
+        dest: "/etc/prometheus/rules.yml"  
+        owner: prometheus
+        group: prometheus
+        mode: '0644'
+      notify: Restart Prometheus
+    
+  handlers:
+    - name: Restart metrics server
+      service:
+        name: metrics_server
+        state: restarted
+
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
+
+    - name: Restart Prometheus
+      service:
+        name: prometheus
+        state: restarted
+
+    - name: Reload systemd and restart Prometheus
+      systemd:
+        daemon_reload: yes
+        name: prometheus
+        state: restarted
+
+    - name: Restart Alertmanager
+      service:
+        name: alertmanager
+        state: restarted
+
+    - name: Reload systemd and restart Alertmanager
+      systemd:
+        daemon_reload: yes
+        name: alertmanager
+        state: restarted

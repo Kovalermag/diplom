@@ -1,0 +1,58 @@
+groups:
+  - name: example-alerts
+    rules:
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{% raw %}High CPU usage on {{ $labels.instance }}{% endraw %}"
+          description: "{% raw %}CPU usage is above 80% for the last 5 minutes.{% endraw %}"
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemFree_bytes - node_memory_Cached_bytes - node_memory_Buffers_bytes) / node_memory_MemTotal_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{% raw %}High memory usage on {{ $labels.instance }}{% endraw %}"
+          description: "{% raw %}Memory usage is above 80% for the last 5 minutes.{% endraw %}"
+
+      - alert: LowDiskSpace
+        expr: (node_filesystem_size_bytes{mountpoint="/"} - node_filesystem_free_bytes{mountpoint="/"}) / node_filesystem_size_bytes{mountpoint="/"} * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{% raw %}Low disk space on {{ $labels.instance }}{% endraw %}"
+          description: "{% raw %}Less than 10% of disk space is available on {{ $labels.instance }}.{% endraw %}"
+
+  - name: vm-alerts
+    rules:
+      - alert: VMStarted
+        expr: time() - node_boot_time_seconds < 300
+        for: 1m
+        labels:
+          severity: info
+        annotations:
+          summary: "{% raw %}VM has been started{% endraw %}"
+          description: "{% raw %}The VM {{ $labels.instance }} was started within the last 5 minutes.{% endraw %}"
+
+      - alert: VMDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{% raw %}VM is down{% endraw %}"
+          description: "{% raw %}The VM {{ $labels.instance }} is not reachable.{% endraw %}"
+
+      - alert: NginxDown
+        expr: up{job="webserver"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{% raw %}Nginx is down on {{ $labels.instance }}{% endraw %}"
+          description: "{% raw %}Nginx service is not reachable on {{ $labels.instance }}.{% endraw %}"

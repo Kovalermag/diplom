@@ -1,0 +1,8 @@
+---
+- import_playbook: nginx-site.yml
+
+- name: Main playbook
+  hosts: elk_servers
+  become: yes
+  roles:
+    - elk-stack

@@ -1,0 +1,15 @@
+[Unit]
+Description=Metrics Server for Prometheus
+After=network.target
+
+[Service]
+User=prometheus
+Group=prometheus
+ExecStart=/usr/bin/python3 /opt/metrics_server.py
+Restart=always
+RestartSec=5
+StandardOutput=null
+StandardError=null
+
+[Install]
+WantedBy=multi-user.target

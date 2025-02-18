@@ -1,0 +1,90 @@
+---
+# Установка Docker и Docker Compose
+
+- name: Install dependencies
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+    update_cache: yes
+
+- name: Add Docker's official GPG key for Debian
+  apt_key:
+    url: https://download.docker.com/linux/debian/gpg
+    state: present
+
+- name: Add Docker repository for Debian
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/debian bullseye stable"
+    state: present
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install Docker
+  apt:
+    name: docker-ce
+    state: present
+
+- name: Install Docker Compose
+  get_url:
+    url: https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
+    dest: /usr/local/bin/docker-compose
+    mode: '0755'
+
+- name: Ensure Docker service is running
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+# Копирование файлов конфигурации
+
+- name: Ensure directory exists
+  file:
+    path: /opt/elk-stack
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+    
+- name: Copy Docker Compose file
+  copy:
+    src: docker-compose.yml
+    dest: /opt/elk-stack/docker-compose.yml
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Copy Logstash configuration
+  copy:
+    src: logstash.conf
+    dest: /opt/elk-stack/logstash.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Copy Filebeat configuration
+  copy:
+    src: filebeat.yml
+    dest: /opt/elk-stack/filebeat.yml
+    owner: root
+    group: root
+    mode: '0644'
+
+# Запуск ELK Stack через Docker Compose
+- name: Pull and start ELK Stack containers
+  command: >
+    docker-compose -f /opt/elk-stack/docker-compose.yml up -d
+  args:
+    chdir: /opt/elk-stack
+  register: elk_status
+  changed_when: "'Creating' in elk_status.stdout or 'Recreating' in elk_status.stdout"
+
+- name: Debug ELK Stack status
+  debug:
+    msg: "{{ elk_status.stdout }}"

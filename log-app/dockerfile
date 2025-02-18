@@ -1,0 +1,14 @@
+# Базовый образ
+FROM eclipse-temurin:23.0.2_7-jre-alpine
+
+# Установка рабочей директории
+WORKDIR /app
+
+# Копирование JAR-файла приложения
+COPY target/logapp-0.0.1-SNAPSHOT.jar logapp.jar
+
+# (Опционально) Установка зависимостей или очистка
+RUN apk update && apk add --no-cache bash && rm -rf /var/cache/apk/*
+
+# Команда для запуска приложения
+CMD ["java", "-jar", "logapp.jar"]
