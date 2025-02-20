@@ -75,6 +75,23 @@
     owner: root
     group: root
     mode: '0644'
+    
+# Настройка rsyslog
+- name: Configure rsyslog to forward logs to localhost:514
+  copy:
+    dest: /etc/rsyslog.d/forward.conf
+    content: |
+      # Отправка всех логов на localhost:514 через UDP
+      *.* @@localhost:514
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Restart rsyslog service
+  service:
+    name: rsyslog
+    state: restarted
+    enabled: yes
 
 # Запуск ELK Stack через Docker Compose
 - name: Pull and start ELK Stack containers

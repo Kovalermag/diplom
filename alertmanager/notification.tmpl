@@ -1,0 +1,10 @@
+{{ define "telegram.default" }}
+⚠️ *Alert:* {{ .CommonLabels.alertname }}
+*Summary:* {{ .CommonAnnotations.summary }}
+*Description:* {{ .CommonAnnotations.description }}
+*Details:*
+{{ range .Alerts }}
+  • *Instance:* {{ .Labels.instance }}
+  • *Severity:* {{ .Labels.severity }}
+{{ end }}
+{{ end }}

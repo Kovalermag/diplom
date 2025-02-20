@@ -1,6 +1,8 @@
 global:
-  scrape_interval: 15s # Интервал сбора метрик
-
+  scrape_interval: 10s # Интервал сбора метрик
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+  
 scrape_configs:
   # Мониторинг самого Prometheus
   - job_name: 'prometheus'

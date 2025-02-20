@@ -6,22 +6,23 @@ route:
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 3h
-  receiver: 'email-notifications'
+  receiver: 'telegram-notifications'  # Изменяем получателя на Telegram
   routes:
     - match:
         alertname: 'VMStarted'
       repeat_interval: 1s  # Отправить только один раз
-      receiver: 'email-notifications'
+      receiver: 'telegram-notifications'
 
 receivers:
-  - name: 'email-notifications'
-    email_configs:
-      - to: 'Kovalermag@gmail.com'
-        from: 'alextestbase@gmail.com'
-        smarthost: 'smtp.gmail.com:587'
-        auth_username: 'alextestbase@gmail.com'
-        auth_password: 'Password'
-        send_resolved: true
+  - name: 'telegram-notifications'
+    webhook_configs:
+      - url: 'https://api.telegram.org/bot7920351482:AAE2S9P9ioPQp8_zoDNxNwfNyUkepBK4dRc/sendMessage?chat_id=513305777&parse_mode=HTML&text=Система не работает'
+        send_resolved: true  # Отправлять уведомления о завершении алертов
+        http_config:
+          basic_auth: {}  # Если требуется аутентификация, настройте её здесь
+  
+templates:
+  - '/etc/alertmanager/notification.tmpl'
 
 inhibit_rules:
   - source_match:

@@ -2,10 +2,8 @@
 - name:  Configure Nginx and Prometheus
   hosts: web
   become: yes
-  vars:
-    site_name: "testwebsite"
-    site_root: "/var/www/html/{{ site_name }}"
-    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  vars_files:
+    - ./vars/diplomvars.yml
 
   tasks:
   
@@ -230,6 +228,16 @@
         mode: '0644'
       notify: Restart Alertmanager
 
+      # Шаг 2: Копирование файла шаблона для Telegram уведомлений
+    - name: Copy notification template file
+      copy:
+        src: "../alertmanager/notification.tmpl"
+        dest: "/etc/alertmanager/notification.tmpl"
+        owner: prometheus
+        group: prometheus
+        mode: '0644'
+      notify: Restart Alertmanager
+
     # Шаг: Создание systemd service file для Alertmanager
     - name: Create Alertmanager systemd service file
       copy:
@@ -243,7 +251,8 @@
           Group=prometheus
           ExecStart=/usr/local/bin/alertmanager \
             --config.file=/etc/alertmanager/alertmanager.yml \
-            --storage.path=/var/lib/alertmanager/data
+            --storage.path=/var/lib/alertmanager/data \
+            --web.listen-address="0.0.0.0:9093"
           Restart=always
           [Install]
           WantedBy=multi-user.target

@@ -14,5 +14,7 @@ steps:
 
 
     terraform apply -auto-approve
-    ansible-playbook -i ../ansible/inventory.ini ../ansible/main_playbook.yml
+    ansible-playbook -i ../ansible/inventory.ini ../ansible/main_playbook.yml --ask-vault-pass
     terraform destroy  -auto-approve
+
+    ansible-vault edit ../ansible/vars/diplomvars.yml
