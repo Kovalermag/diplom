@@ -14,26 +14,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Сборка приложения (если требуется)
+      # 2. Сборка приложения
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          java-version: '21'  # Укажите версию Java, которую использует ваше приложение
+          java-version: '21' 
           distribution: 'temurin'
 
       - name: Build with Maven
-        working-directory: log-app  # Указываем рабочую директорию
-        run: mvn clean package  # Если вы используете Maven. Для Gradle замените на `gradle build`
+        working-directory: log-app  
+        run: mvn clean package  
 
       # 3. Создание Docker-образа
       - name: Build Docker image
-        working-directory: log-app  # Указываем рабочую директорию
+        working-directory: log-app 
         run: |
           docker build -t log-app .
 
       # 4. Сохранение Docker-образа в tar-архив
       - name: Save Docker image
-        working-directory: log-app  # Указываем рабочую директорию
+        working-directory: log-app 
         run: |
           docker save log-app > log-app.tar
 
