@@ -19,7 +19,7 @@ resource "google_compute_firewall" "default" {
 
   allow {
     protocol = "tcp"
-    ports    = ["443", "22", "80", "5044", "5601", "8080", "8081", "9090", "9093", "9100", "9200", "19100"]
+    ports    = ["443", "22", "80", "5044", "5601", "8080", "8081", "9090", "9093", "9100", "9200","18080", "19100"]
   }
   source_ranges = ["0.0.0.0/0"]  
   target_tags = ["http-server", "https-server", "http-server", "lb-health-check"]

@@ -1,7 +1,5 @@
 ---
-- import_playbook: 
-  -  nginx-site.yml
-  -  update_github_secret.yml
+- import_playbook: nginx-site.yml
 
 - name: Main playbook
   hosts: elk_servers
