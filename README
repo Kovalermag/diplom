@@ -1,20 +1,9 @@
- CI/CD Pipeline
-Если вы используете CI/CD (например, GitHub Actions, GitLab CI или Jenkins), добавьте шаг для выполнения команды:
-.yaml 
+terraform apply -auto-approve
+ansible-playbook -i ../ansible/inventory.ini ../ansible/main_playbook.yml --ask-vault-pass
+terraform destroy  -auto-approve
 
-steps:
-  - name: Run Terraform
-    run: |
-      cd /path/to/terraform
-      terraform apply -auto-approve
-      terraform output -json > terraform_output.json
+ansible-vault edit ../ansible/vars/diplomvars.yml
 
-  - name: Run Ansible
-    run: ansible-playbook -i ../ansible/inventory.ini ../ansible/main_playbook.yml
-
-
-    terraform apply -auto-approve
-    ansible-playbook -i ../ansible/inventory.ini ../ansible/main_playbook.yml --ask-vault-pass
-    terraform destroy  -auto-approve
-
-    ansible-vault edit ../ansible/vars/diplomvars.yml
+git add .
+git commit -m "test"
+git push diplom master
