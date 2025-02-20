@@ -63,7 +63,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/debian/
-            docker load < log-app.tar
-            docker stop log-app || true
-            docker rm log-app || true
-            docker run -d --name log-app -p 18080:8080 log-app
+            sudo docker load < log-app.tar
+            sudo docker stop log-app || true
+            sudo docker rm log-app || true
+            sudo docker run -d --name log-app -p 18080:8080 log-app
