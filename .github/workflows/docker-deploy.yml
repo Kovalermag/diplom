@@ -41,7 +41,7 @@ jobs:
       - name: Parse inventory file to get IP address
         id: parse_inventory
         run: |
-          SERVER_HOST=$(awk -F'=' '/ansible_host/ {print $2}' inventory.ini | head -n 1)
+          SERVER_HOST=$(awk -F'=' '/ansible_host/ {split($2, arr, " "); print arr[1]}' log-app/inventory.ini | head -n 1)
           echo "SERVER_HOST=$SERVER_HOST" >> $GITHUB_ENV
 
       # 6. Копирование Docker-образа на сервер
