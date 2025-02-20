@@ -62,7 +62,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /home/debian/
+            cd /home/debian/log-app/
             sudo docker load < log-app.tar
             sudo docker stop log-app || true
             sudo docker rm log-app || true
