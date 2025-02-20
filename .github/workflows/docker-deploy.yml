@@ -42,7 +42,7 @@ jobs:
         id: parse_inventory
         run: |
           # Извлечение IP-адреса из группы [web]
-          SERVER_HOST=$(awk -F'=' '/\[web\]/,/^$/{if ($0 ~ /ansible_host/) {split($2, arr, " "); print arr[1]; exit}}' ../../ansible/inventory.ini)
+          SERVER_HOST=$(awk -F'=' '/\[web\]/,/^$/{if ($0 ~ /ansible_host/) {split($2, arr, " "); print arr[1]; exit}}' ansible/inventory.ini)
           if [ -z "$SERVER_HOST" ]; then
             echo "Error: Unable to extract SERVER_HOST from inventory.ini"
             exit 1
